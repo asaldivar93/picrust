@@ -1,0 +1,32 @@
+
+qiime fragment-insertion sepp --i-representative-sequences qiime/paired-end/otu-seqs.qza \
+                              --p-threads 8 \
+                              --i-reference-database picrust/picrust2_default_sepp_ref.qza \
+                              --output-dir picrust/custom-tree
+
+qiime picrust2 custom-tree-pipeline \
+  --i-table qiime/paired-end/otu-table.qza \
+  --i-tree picrust/custom-tree/tree.qza \
+  --output-dir picrust/EC_metagenome_out \
+  --p-threads 16 \
+  --p-hsp-method mp \
+  --p-max-nsti 2 \
+  --verbose
+
+qiime tools export \
+ --input-path picrust/EC_metagenome_out/ec_metagenome.qza \
+ --output-path EC_metagenome_out
+
+biom convert -i feature-table.biom -o pred_metagenome_unstrat.tsv --to-tsv --table-type "OTU table"
+
+pathway_pipeline.py \
+  -i EC_metagenome_out/pred_metagenome_unstrat.tsv.gz \
+  -o pathways_out \
+  --intermediate minpath_working \
+  --coverage \
+  -m /home/alexis/UAM/picrust/default_files/metacyc_path2rxn_struc_filt_pro.txt \
+  -p 16
+
+
+
+

@@ -1,0 +1,12 @@
+setwd("/home/alexis/UAM/picrust/DataSets/Analysis")
+library("banocc")
+C <- read.csv('composition.csv', header = FALSE, sep = "\t")
+banocc_model <- rstan::stan_model(model_code = banocc::banocc_model)
+mc.cores = parallel::detectCores()
+options(mc.cores = parallel::detectCores())
+control = list(adapt_delta = 0.9, max_treedepth = 15)
+b_fit <- banocc::run_banocc(C = C, compiled_banocc_model = banocc_model, cores = 16, b = 5,
+                            chains = 6, iter = 6000, verbose = TRUE, control = control)
+b_output_ec <- banocc::get_banocc_output(b_fit, eval_convergence = TRUE)
+b_output <- banocc::get_banocc_output(b_fit, get_min_width = TRUE, calc_snc = TRUE)
+save.image('banocc_correlations.Rdata')
