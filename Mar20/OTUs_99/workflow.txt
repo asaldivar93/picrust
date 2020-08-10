@@ -1,0 +1,54 @@
+place_seqs.py -s /home/alexis/UAM/qiime/Mar20/OTUs_99/dna-sequences.fasta \
+	      -o placed_seqs.tre \
+	      -p 14 
+
+hsp.py -i 16S -t placed_seqs.tre -o marker_nsti_predicted.tsv.gz -p 14 -n
+hsp.py -i EC -t placed_seqs.tre -o EC_predicted.tsv.gz -p 14
+
+metagenome_pipeline.py -i /home/alexis/UAM/qiime/Mar20/OTUs_99/feature-table.biom \
+                       -m marker_nsti_predicted.tsv.gz \
+                       -f EC_predicted.tsv.gz \
+		       --strat_out \
+                       -o EC_metagenome_out
+
+pathway_pipeline.py -i EC_metagenome_out/pred_metagenome_contrib.tsv.gz \
+                    -o pathways_out \
+                    --coverage \
+                    -m /home/alexis/UAM/picrust/default_files/metacyc_path2rxn_struc_filt_pro.txt \
+                    -p 14
+
+add_descriptions.py -i EC_metagenome_out/pred_metagenome_unstrat.tsv.gz -m EC \
+                    -o EC_metagenome_out/pred_metagenome_unstrat_descrip.tsv.gz
+
+add_descriptions.py -i pathways_out/path_abun_unstrat.tsv.gz -m METACYC \
+                    -o pathways_out/path_abun_unstrat_descrip.tsv.gz
+
+add_descriptions.py -i pathways_out/path_abun_unstrat.tsv.gz \
+                    --custom_map_tabl default_file/metacyc_pathways_info_prokaryotes_top_level.tsv \
+                    -o pathways_out/path_abun_unstrat_descrip_toplevel.tsv
+
+add_descriptions.py -i pathways_out/path_abun_unstrat.tsv.gz \
+                    --custom_map_tabl default_file/metacyc_pathways_info_prokaryotes_sec_level.tsv \
+                    -o pathways_out/path_abun_unstrat_descrip_seclevel.tsv
+
+
+
+####Analysis of biomenet metabosystems####
+pathway_pipeline.py -i EC_metagenome_out/pred_metagenome_unstrat.tsv.gz \
+                    -o pathways_out_full_L250 \
+                    -m /home/alexis/UAM/picrust/default_files/metacyc_path2rxn_struc_filt_pro.txt \
+                    -p 14
+
+add_descriptions.py -i pathways_out_1/path_abun_unstrat.tsv.gz -m METACYC \
+                    -o pathways_out_1/path_abun_descrip.tsv
+
+add_descriptions.py -i pathways_out/path_abun_V4.tsv.gz \
+                    --custom_map_tabl /home/alexis/UAM/qiime/Mar20/picruts2/default_file/metacyc_pathways_info_prokaryotes_top_level.tsv \
+                    -o pathways_out/path_abun_V4_descrip_toplevel.tsv
+
+add_descriptions.py -i pathways_out/path_abun_V4.tsv.gz \
+                    --custom_map_tabl /home/alexis/UAM/qiime/Mar20/picruts2/default_file/metacyc_pathways_info_prokaryotes_sec_level.tsv \
+                    -o pathways_out/path_abun_V4_descrip_seclevel.tsv
+
+
+
