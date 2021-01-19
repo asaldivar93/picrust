@@ -97,7 +97,7 @@ def load_unstrat_pathway(path = 'pathways_out/path_abun_unstrat.tsv.gz', default
     pathway_unstrat['second_level_C'].index.name = 'pathway'
     return pathway_unstrat
 
-def heat_map_violin_plot(pthwy_df):
+def heat_map_violin_plot(pthwy_df, cmap = sns.diverging_palette(263, 244, s = 79, l = 65, sep = 20, as_cmap = True)):
     row_linkage = linkage(pdist(pthwy_df.to_numpy()), method = "ward", optimal_ordering = True)
     row_cluster = fcluster(row_linkage, 4, criterion = 'maxclust')
     fun_palette = dict(zip(np.unique(row_cluster), 
@@ -109,15 +109,16 @@ def heat_map_violin_plot(pthwy_df):
     col_linkage = linkage(pdist(pthwy_df.T.to_numpy()), 
                           method = "weighted", optimal_ordering = True)
 
-    cmap = sns.diverging_palette(263, 244, s = 79, l = 65, sep = 20, as_cmap = True)
-    fig_heatmap = sns.clustermap(pthwy_df, row_linkage = row_linkage, 
-                                     col_linkage = col_linkage, cmap = cmap, 
-                                     method = "weighted",
+    
+    fig_heatmap = sns.clustermap(pthwy_df, row_linkage = row_linkage, center = 0,
+                                     col_linkage = col_linkage, cmap = cmap,
+                                     cbar_kws = {'orientation': 'vertical'},
+                                     method = "weighted", cbar_pos=(0.05, 1.01, 0.4, 0.02),
                                      row_colors = row_color, dendrogram_ratio=0.05, 
                                      colors_ratio=0.02, yticklabels = True)
     temp1 = pthwy_df.copy()
     temp1.reset_index(inplace = True)
-    temp = pd.melt(temp1.reset_index(), id_vars = ['pathway'], value_vars = pthwy_df.columns, var_name = 'sample', value_name = 'clr')
+    temp = pd.melt(temp1.reset_index(), id_vars = ['pathway'], value_vars = pthwy_df.columns, var_name = 'sample', value_name = 'Centered log-ratio')
 
     # make some space to the right in the figure
     fig_heatmap.gs.update(right=1)
@@ -131,15 +132,37 @@ def heat_map_violin_plot(pthwy_df):
 
     #Draw a violin plot of clr's for each pathway
     vlplt_order = [t.get_text() for t in np.array(fig_heatmap.ax_heatmap.get_yticklabels())]
-    sns.violinplot(y = 'pathway', x = 'clr', data = temp, ax = vlplt_ax, order = vlplt_order)
+    sns.violinplot(y = 'pathway', x = 'Centered log-ratio', data = temp, ax = vlplt_ax, order = vlplt_order)
     #Move labes to the rigth
     vlplt_ax.yaxis.set_ticks_position('right')
     vlplt_ax.yaxis.label.set_visible(False)
     #turn off labels of the heatmap
     fig_heatmap.ax_heatmap.set_yticklabels('')
     fig_heatmap.ax_heatmap.set_yticks([])
+    fig_heatmap.ax_heatmap.set_ylabel('')
     return fig_heatmap
 
+def heat_map_simple(pthwy_df):
+    row_linkage = linkage(pdist(pthwy_df.to_numpy()), method = "ward", optimal_ordering = True)
+    row_cluster = fcluster(row_linkage, 4, criterion = 'maxclust')
+    fun_palette = dict(zip(np.unique(row_cluster), 
+                           sns.color_palette("Paired", len(np.unique(row_cluster)))))
+    fun_color = pd.Series(row_cluster, 
+                          index = pthwy_df.index, name = 'clusters').map(fun_palette)
+    row_color = pd.DataFrame(fun_color)
+
+    col_linkage = linkage(pdist(pthwy_df.T.to_numpy()), 
+                          method = "weighted", optimal_ordering = True)
+
+    cmap = sns.diverging_palette(263, 244, s = 79, l = 65, sep = 20, as_cmap = True)
+    fig_heatmap = sns.clustermap(pthwy_df, row_linkage = row_linkage, 
+                                     col_linkage = col_linkage, cmap = cmap,
+                                     cbar_kws = {'orientation': 'vertical'},
+                                     method = "weighted", cbar_pos=(0.05, 1.01, 0.4, 0.02),
+                                     row_colors = row_color, dendrogram_ratio=0.05, 
+                                     colors_ratio=0.02, yticklabels = True)
+    
+    return fig_heatmap
 
 def sample_strat_pathway(sample, pthwy_df, default_path = '/home/alexis/UAM/picrust/default_files/'):
     #Load bottom level description
